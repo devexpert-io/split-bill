@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,7 +149,7 @@ fun ReceiptScreen(
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "€${String.format("%.2f", selectedTotal)}",
+                            text = "€${String.format(Locale.getDefault(), "%.2f", selectedTotal)}",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -237,7 +238,7 @@ fun SelectableTicketItemCard(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "€${String.format("%.2f", item.price)} ${stringResource(R.string.each)}",
+                    text = "€${String.format(Locale.getDefault(), "%.2f", item.price)} ${stringResource(R.string.each)}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -351,7 +352,7 @@ fun PaidTicketItemCard(
                     textDecoration = TextDecoration.LineThrough
                 )
                 Text(
-                    text = "€${String.format("%.2f", item.price)} ${stringResource(R.string.each)}",
+                    text = "€${String.format(Locale.getDefault(), "%.2f", item.price)} ${stringResource(R.string.each)}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textDecoration = TextDecoration.LineThrough
@@ -360,7 +361,7 @@ fun PaidTicketItemCard(
 
             // Precio total pagado
             Text(
-                text = "€${String.format("%.2f", item.price * paidQuantity)}",
+                text = "€${String.format(Locale.getDefault(), "%.2f", item.price * paidQuantity)}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

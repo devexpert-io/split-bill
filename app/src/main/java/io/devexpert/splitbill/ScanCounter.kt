@@ -65,9 +65,5 @@ class ScanCounter(private val context: Context) {
             }
         }
     }
-    
-    // Obtener el número actual de escaneos (para uso inmediato)
-    suspend fun getCurrentScans(): Int {
-        return context.dataStore.data.first()[SCANS_REMAINING_KEY] ?: MAX_SCANS_PER_MONTH
-    }
+
 } 

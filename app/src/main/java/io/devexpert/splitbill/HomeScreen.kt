@@ -34,6 +34,7 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.launch
 import java.io.File
 import io.devexpert.splitbill.BuildConfig
+import androidx.core.graphics.scale
 
 // El Composable principal de la pantalla de inicio
 @Composable
@@ -52,11 +53,7 @@ fun HomeScreen(
         scanCounter.initializeOrResetIfNeeded()
     }
 
-    // Estado para almacenar la foto capturada (temporal, solo para pasarla a la IA)
-    var capturedPhoto by remember { mutableStateOf<Bitmap?>(null) }
-
     // Estado para mostrar el resultado del procesamiento
-    var processingResult by remember { mutableStateOf<TicketData?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -71,7 +68,7 @@ fun HomeScreen(
         val aspectRatio = bitmap.height.toFloat() / bitmap.width
         val newWidth = maxWidth
         val newHeight = (maxWidth * aspectRatio).toInt()
-        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+        return bitmap.scale(newWidth, newHeight)
     }
 
     // Launcher para capturar foto con la cámara (alta resolución)
@@ -84,14 +81,12 @@ fun HomeScreen(
             if (bitmap != null) {
                 // Redimensionar antes de procesar
                 val resizedBitmap = resizeBitmapToMaxWidth(bitmap, 1280)
-                capturedPhoto = resizedBitmap
                 isProcessing = true
                 errorMessage = null
                 // Procesar la imagen con IA
                 coroutineScope.launch {
                     ticketProcessor.processTicketImage(resizedBitmap)
                         .onSuccess { ticketData ->
-                            processingResult = ticketData
                             // Decrementar el contador solo si el procesamiento fue exitoso
                             scanCounter.decrementScan()
                             isProcessing = false
