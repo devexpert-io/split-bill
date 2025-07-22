@@ -1,6 +1,9 @@
 package io.devexpert.splitbill
 
 import androidx.compose.foundation.layout.*
+import io.devexpert.splitbill.data.TicketRepository
+import io.devexpert.splitbill.data.TicketData
+import io.devexpert.splitbill.data.TicketItem
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -22,9 +25,10 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceiptScreen(
+    ticketRepository: TicketRepository,
     onBackPressed: () -> Unit
 ) {
-    val ticketData = remember { TicketDataHolder.getTicketData() }
+    val ticketData = remember { ticketRepository.getTicketData() }
 
     if (ticketData == null) {
         // Si no hay datos, mostrar error y botón para volver

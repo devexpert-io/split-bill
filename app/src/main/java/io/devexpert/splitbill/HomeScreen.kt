@@ -1,6 +1,5 @@
 package io.devexpert.splitbill
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,16 +30,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import io.devexpert.splitbill.data.TicketRepository
+import io.devexpert.splitbill.ui.ImageConverter
 import kotlinx.coroutines.launch
 import java.io.File
-import io.devexpert.splitbill.BuildConfig
-import androidx.core.graphics.scale
 
 // El Composable principal de la pantalla de inicio
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onTicketProcessed: (TicketData) -> Unit
+    ticketRepository: TicketRepository,
+    onTicketProcessed: () -> Unit
 ) {
     // Variable local para los escaneos restantes (ahora desde DataStore)
     val context = LocalContext.current
@@ -59,17 +59,9 @@ fun HomeScreen(
 
     // Coroutine scope para operaciones asíncronas
     val coroutineScope = rememberCoroutineScope()
-    val ticketProcessor = remember { TicketProcessor(useMockData = BuildConfig.DEBUG) }
 
     var photoUri by remember { mutableStateOf<Uri?>(null) }
 
-    fun resizeBitmapToMaxWidth(bitmap: Bitmap, maxWidth: Int): Bitmap {
-        if (bitmap.width <= maxWidth) return bitmap
-        val aspectRatio = bitmap.height.toFloat() / bitmap.width
-        val newWidth = maxWidth
-        val newHeight = (maxWidth * aspectRatio).toInt()
-        return bitmap.scale(newWidth, newHeight)
-    }
 
     // Launcher para capturar foto con la cámara (alta resolución)
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -79,27 +71,25 @@ fun HomeScreen(
             val inputStream = context.contentResolver.openInputStream(photoUri!!)
             val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
             if (bitmap != null) {
-                // Redimensionar antes de procesar
-                val resizedBitmap = resizeBitmapToMaxWidth(bitmap, 1280)
                 isProcessing = true
                 errorMessage = null
-                // Procesar la imagen con IA
+                // Convertir Bitmap a ByteArray y procesar con IA
                 coroutineScope.launch {
-                    ticketProcessor.processTicketImage(resizedBitmap)
-                        .onSuccess { ticketData ->
-                            // Decrementar el contador solo si el procesamiento fue exitoso
-                            scanCounter.decrementScan()
-                            isProcessing = false
-                            // Llamar al callback para navegar a la siguiente pantalla
-                            onTicketProcessed(ticketData)
-                        }
-                        .onFailure { error ->
-                            errorMessage = context.getString(
-                                R.string.error_processing_ticket,
-                                error.message ?: ""
-                            )
-                            isProcessing = false
-                        }
+                    try {
+                        val imageBytes = ImageConverter.toResizedByteArray(bitmap)
+                        ticketRepository.processTicket(imageBytes)
+                        // Decrementar el contador solo si el procesamiento fue exitoso
+                        scanCounter.decrementScan()
+                        isProcessing = false
+                        // Llamar al callback para navegar a la siguiente pantalla
+                        onTicketProcessed()
+                    } catch (error: Exception) {
+                        errorMessage = context.getString(
+                            R.string.error_processing_ticket,
+                            error.message ?: ""
+                        )
+                        isProcessing = false
+                    }
                 }
             } else {
                 errorMessage = context.getString(R.string.could_not_read_image)
