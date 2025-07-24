@@ -26,7 +26,6 @@ import io.devexpert.splitbill.ui.state.rememberCameraState
 
 @Composable
 fun HomeScreen(
-    modifier: Modifier = Modifier,
     viewModel: HomeViewModel,
     onTicketProcessed: () -> Unit
 ) {
@@ -40,22 +39,20 @@ fun HomeScreen(
         }
     }
 
-    HomeScreenContent(
-        modifier = modifier,
+    HomeScreen(
         uiState = uiState,
         onScanClicked = cameraState::launchCamera
     )
 }
 
 @Composable
-fun HomeScreenContent(
-    modifier: Modifier = Modifier,
+fun HomeScreen(
     uiState: HomeUiState,
     onScanClicked: () -> Unit
 ) {
     Scaffold { padding ->
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -111,7 +108,7 @@ fun HomeScreenContent(
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenContentPreview() {
-    HomeScreenContent(
+    HomeScreen(
         uiState = HomeUiState(
             scansLeft = 3,
             isProcessing = false,
@@ -125,7 +122,7 @@ fun HomeScreenContentPreview() {
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenContentProcessingPreview() {
-    HomeScreenContent(
+    HomeScreen(
         uiState = HomeUiState(
             scansLeft = 2,
             isProcessing = true,
@@ -139,7 +136,7 @@ fun HomeScreenContentProcessingPreview() {
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenContentNoScansPreview() {
-    HomeScreenContent(
+    HomeScreen(
         uiState = HomeUiState(
             scansLeft = 0,
             isProcessing = false,
@@ -153,7 +150,7 @@ fun HomeScreenContentNoScansPreview() {
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenContentErrorPreview() {
-    HomeScreenContent(
+    HomeScreen(
         uiState = HomeUiState(
             scansLeft = 1,
             isProcessing = false,

@@ -31,7 +31,7 @@ fun ReceiptScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    ReceiptScreenContent(
+    ReceiptScreen(
         uiState = uiState,
         onBackPressed = onBackPressed,
         onQuantityChange = viewModel::onQuantityChange,
@@ -41,7 +41,7 @@ fun ReceiptScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReceiptScreenContent(
+fun ReceiptScreen(
     uiState: ReceiptUiState,
     onBackPressed: () -> Unit,
     onQuantityChange: (TicketItem, Int) -> Unit,
@@ -357,7 +357,7 @@ fun ReceiptScreenContentPreview() {
         total = 51.50
     )
     
-    ReceiptScreenContent(
+    ReceiptScreen(
         uiState = ReceiptUiState(
             ticketData = sampleTicketData,
             availableItems = listOf(
@@ -383,7 +383,7 @@ fun ReceiptScreenContentPreview() {
 @Preview(showBackground = true)
 @Composable
 fun ReceiptScreenContentEmptyPreview() {
-    ReceiptScreenContent(
+    ReceiptScreen(
         uiState = ReceiptUiState(ticketData = null),
         onBackPressed = {},
         onQuantityChange = { _, _ -> },
@@ -404,7 +404,7 @@ fun ReceiptScreenContentAllPaidPreview() {
         total = 12.50
     )
     
-    ReceiptScreenContent(
+    ReceiptScreen(
         uiState = ReceiptUiState(
             ticketData = sampleTicketData,
             availableItems = emptyList(),
