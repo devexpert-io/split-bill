@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import io.devexpert.splitbill.data.TicketRepository
 import io.devexpert.splitbill.data.TicketData
 import io.devexpert.splitbill.data.TicketItem
+import io.devexpert.splitbill.domain.usecases.GetTicketDataUseCase
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -28,7 +29,9 @@ fun ReceiptScreen(
     ticketRepository: TicketRepository,
     onBackPressed: () -> Unit
 ) {
-    val ticketData = remember { ticketRepository.getTicketData() }
+    // Caso de uso para obtener datos del repositorio
+    val getTicketDataUseCase = remember { GetTicketDataUseCase(ticketRepository) }
+    val ticketData = remember { getTicketDataUseCase() }
 
     if (ticketData == null) {
         // Si no hay datos, mostrar error y botón para volver
