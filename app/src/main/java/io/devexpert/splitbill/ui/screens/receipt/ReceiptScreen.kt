@@ -16,9 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.devexpert.splitbill.R
+import io.devexpert.splitbill.data.TicketData
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -339,5 +341,83 @@ fun PaidTicketItemCard(
             )
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReceiptScreenContentPreview() {
+    val sampleItems = listOf(
+        TicketItem(name = "Pizza Margherita", quantity = 2, price = 12.50),
+        TicketItem(name = "Pasta Carbonara", quantity = 1, price = 14.00),
+        TicketItem(name = "Tiramisu", quantity = 2, price = 6.50)
+    )
+    
+    val sampleTicketData = TicketData(
+        items = sampleItems,
+        total = 51.50
+    )
+    
+    ReceiptScreenContent(
+        uiState = ReceiptUiState(
+            ticketData = sampleTicketData,
+            availableItems = listOf(
+                sampleItems[0] to 2,
+                sampleItems[1] to 1,
+                sampleItems[2] to 1
+            ),
+            paidItems = listOf(
+                sampleItems[2] to 1
+            ),
+            selectedQuantities = mapOf(
+                sampleItems[0] to 1,
+                sampleItems[1] to 1
+            ),
+            selectedTotal = 26.50
+        ),
+        onBackPressed = {},
+        onQuantityChange = { _, _ -> },
+        onMarkAsPaid = {}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReceiptScreenContentEmptyPreview() {
+    ReceiptScreenContent(
+        uiState = ReceiptUiState(ticketData = null),
+        onBackPressed = {},
+        onQuantityChange = { _, _ -> },
+        onMarkAsPaid = {}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ReceiptScreenContentAllPaidPreview() {
+    val sampleItems = listOf(
+        TicketItem(name = "Hamburger", quantity = 1, price = 8.50),
+        TicketItem(name = "French Fries", quantity = 1, price = 4.00)
+    )
+    
+    val sampleTicketData = TicketData(
+        items = sampleItems,
+        total = 12.50
+    )
+    
+    ReceiptScreenContent(
+        uiState = ReceiptUiState(
+            ticketData = sampleTicketData,
+            availableItems = emptyList(),
+            paidItems = listOf(
+                sampleItems[0] to 1,
+                sampleItems[1] to 1
+            ),
+            selectedQuantities = emptyMap(),
+            selectedTotal = 0.0
+        ),
+        onBackPressed = {},
+        onQuantityChange = { _, _ -> },
+        onMarkAsPaid = {}
+    )
 }
  

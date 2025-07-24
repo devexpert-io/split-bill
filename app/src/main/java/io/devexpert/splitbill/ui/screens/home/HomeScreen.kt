@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.devexpert.splitbill.R
@@ -105,5 +106,61 @@ fun HomeScreenContent(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenContentPreview() {
+    HomeScreenContent(
+        uiState = HomeUiState(
+            scansLeft = 3,
+            isProcessing = false,
+            errorMessage = null,
+            ticketProcessed = false
+        ),
+        onScanClicked = {}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenContentProcessingPreview() {
+    HomeScreenContent(
+        uiState = HomeUiState(
+            scansLeft = 2,
+            isProcessing = true,
+            errorMessage = null,
+            ticketProcessed = false
+        ),
+        onScanClicked = {}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenContentNoScansPreview() {
+    HomeScreenContent(
+        uiState = HomeUiState(
+            scansLeft = 0,
+            isProcessing = false,
+            errorMessage = null,
+            ticketProcessed = false
+        ),
+        onScanClicked = {}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenContentErrorPreview() {
+    HomeScreenContent(
+        uiState = HomeUiState(
+            scansLeft = 1,
+            isProcessing = false,
+            errorMessage = "Error processing image",
+            ticketProcessed = false
+        ),
+        onScanClicked = {}
+    )
 }
  
