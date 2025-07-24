@@ -18,9 +18,11 @@ import io.devexpert.splitbill.domain.usecases.GetScansRemainingUseCase
 import io.devexpert.splitbill.domain.usecases.GetTicketDataUseCase
 import io.devexpert.splitbill.domain.usecases.InitializeScanCounterUseCase
 import io.devexpert.splitbill.domain.usecases.ProcessTicketUseCase
+import io.devexpert.splitbill.ui.screens.home.HomeScreen
 import io.devexpert.splitbill.ui.theme.SplitBillTheme
-import io.devexpert.splitbill.ui.viewmodel.HomeViewModel
-import io.devexpert.splitbill.ui.viewmodel.ReceiptViewModel
+import io.devexpert.splitbill.ui.screens.home.HomeViewModel
+import io.devexpert.splitbill.ui.screens.receipt.ReceiptScreen
+import io.devexpert.splitbill.ui.screens.receipt.ReceiptViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

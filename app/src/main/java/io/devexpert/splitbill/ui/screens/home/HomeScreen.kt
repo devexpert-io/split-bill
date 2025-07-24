@@ -1,4 +1,4 @@
-package io.devexpert.splitbill
+package io.devexpert.splitbill.ui.screens.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +20,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.devexpert.splitbill.R
 import io.devexpert.splitbill.ui.state.rememberCameraState
-import io.devexpert.splitbill.ui.viewmodel.HomeViewModel
-import io.devexpert.splitbill.ui.viewmodel.HomeUiState
 
 @Composable
 fun HomeScreen(

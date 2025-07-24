@@ -1,4 +1,4 @@
-package io.devexpert.splitbill.ui.viewmodel
+package io.devexpert.splitbill.ui.screens.receipt
 
 import androidx.lifecycle.ViewModel
 import io.devexpert.splitbill.data.TicketData

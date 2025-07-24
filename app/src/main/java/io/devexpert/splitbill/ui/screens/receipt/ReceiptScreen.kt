@@ -1,4 +1,4 @@
-package io.devexpert.splitbill
+package io.devexpert.splitbill.ui.screens.receipt
 
 import androidx.compose.foundation.layout.*
 import io.devexpert.splitbill.data.TicketItem
@@ -18,8 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.devexpert.splitbill.ui.viewmodel.ReceiptViewModel
-import io.devexpert.splitbill.ui.viewmodel.ReceiptUiState
+import io.devexpert.splitbill.R
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -213,7 +212,8 @@ fun SelectableTicketItemCard(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "€${String.format(Locale.getDefault(), "%.2f", item.price)} ${stringResource(R.string.each)}",
+                    text = "€${String.format(Locale.getDefault(), "%.2f", item.price)} ${stringResource(
+                        R.string.each)}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -322,7 +322,8 @@ fun PaidTicketItemCard(
                     textDecoration = TextDecoration.LineThrough
                 )
                 Text(
-                    text = "€${String.format(Locale.getDefault(), "%.2f", item.price)} ${stringResource(R.string.each)}",
+                    text = "€${String.format(Locale.getDefault(), "%.2f", item.price)} ${stringResource(
+                        R.string.each)}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textDecoration = TextDecoration.LineThrough

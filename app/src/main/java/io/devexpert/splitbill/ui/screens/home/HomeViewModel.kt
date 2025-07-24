@@ -1,4 +1,4 @@
-package io.devexpert.splitbill.ui.viewmodel
+package io.devexpert.splitbill.ui.screens.home
 
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
