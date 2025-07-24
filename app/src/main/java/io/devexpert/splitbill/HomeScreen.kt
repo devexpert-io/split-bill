@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import io.devexpert.splitbill.data.TicketRepository
+import io.devexpert.splitbill.data.ScanCounterRepository
 import io.devexpert.splitbill.ui.ImageConverter
 import kotlinx.coroutines.launch
 import java.io.File
@@ -40,17 +41,17 @@ import java.io.File
 fun HomeScreen(
     modifier: Modifier = Modifier,
     ticketRepository: TicketRepository,
+    scanCounterRepository: ScanCounterRepository,
     onTicketProcessed: () -> Unit
 ) {
-    // Variable local para los escaneos restantes (ahora desde DataStore)
     val context = LocalContext.current
-    val scanCounter = remember { ScanCounter(context) }
-    val scansLeft by scanCounter.scansRemaining.collectAsState(initial = 5)
+    
+    val scansLeft by scanCounterRepository.scansRemaining.collectAsState(initial = 0)
     val isButtonEnabled = scansLeft > 0
 
     // Inicializar o resetear si es necesario al cargar la pantalla
     LaunchedEffect(Unit) {
-        scanCounter.initializeOrResetIfNeeded()
+        scanCounterRepository.initializeOrResetIfNeeded()
     }
 
     // Estado para mostrar el resultado del procesamiento
@@ -79,7 +80,7 @@ fun HomeScreen(
                         val imageBytes = ImageConverter.toResizedByteArray(bitmap)
                         ticketRepository.processTicket(imageBytes)
                         // Decrementar el contador solo si el procesamiento fue exitoso
-                        scanCounter.decrementScan()
+                        scanCounterRepository.decrementScan()
                         isProcessing = false
                         // Llamar al callback para navegar a la siguiente pantalla
                         onTicketProcessed()
