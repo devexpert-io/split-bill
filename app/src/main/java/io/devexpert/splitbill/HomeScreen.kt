@@ -20,7 +20,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,51 +29,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
-import io.devexpert.splitbill.data.TicketRepository
-import io.devexpert.splitbill.data.ScanCounterRepository
-import io.devexpert.splitbill.domain.usecases.ProcessTicketUseCase
-import io.devexpert.splitbill.domain.usecases.InitializeScanCounterUseCase
-import io.devexpert.splitbill.domain.usecases.GetScansRemainingUseCase
-import io.devexpert.splitbill.domain.usecases.DecrementScanCounterUseCase
-import io.devexpert.splitbill.ui.ImageConverter
-import kotlinx.coroutines.launch
+import io.devexpert.splitbill.ui.viewmodel.HomeViewModel
+import io.devexpert.splitbill.ui.viewmodel.HomeUiState
 import java.io.File
 
-// El Composable principal de la pantalla de inicio
 @Composable
 fun HomeScreen(
-    modifier: Modifier = Modifier,
-    ticketRepository: TicketRepository,
-    scanCounterRepository: ScanCounterRepository,
+    viewModel: HomeViewModel,
     onTicketProcessed: () -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    
-    // Casos de uso
-    val processTicketUseCase = remember { ProcessTicketUseCase(ticketRepository) }
-    val initializeScanCounterUseCase = remember { InitializeScanCounterUseCase(scanCounterRepository) }
-    val getScansRemainingUseCase = remember { GetScansRemainingUseCase(scanCounterRepository) }
-    val decrementScanCounterUseCase = remember { DecrementScanCounterUseCase(scanCounterRepository) }
-    
-    val scansLeft by getScansRemainingUseCase().collectAsState(initial = 0)
-    val isButtonEnabled = scansLeft > 0
-
-    // Inicializar o resetear si es necesario al cargar la pantalla
-    LaunchedEffect(Unit) {
-        initializeScanCounterUseCase()
-    }
-
-    // Estado para mostrar el resultado del procesamiento
-    var isProcessing by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // Coroutine scope para operaciones asíncronas
-    val coroutineScope = rememberCoroutineScope()
 
     var photoUri by remember { mutableStateOf<Uri?>(null) }
 
-
-    // Launcher para capturar foto con la cámara (alta resolución)
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
@@ -82,35 +50,41 @@ fun HomeScreen(
             val inputStream = context.contentResolver.openInputStream(photoUri!!)
             val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
             if (bitmap != null) {
-                isProcessing = true
-                errorMessage = null
-                // Convertir Bitmap a ByteArray y procesar con IA
-                coroutineScope.launch {
-                    try {
-                        val imageBytes = ImageConverter.toResizedByteArray(bitmap)
-                        processTicketUseCase(imageBytes)
-                        // Decrementar el contador solo si el procesamiento fue exitoso
-                        decrementScanCounterUseCase()
-                        isProcessing = false
-                        // Llamar al callback para navegar a la siguiente pantalla
-                        onTicketProcessed()
-                    } catch (error: Exception) {
-                        errorMessage = context.getString(
-                            R.string.error_processing_ticket,
-                            error.message ?: ""
-                        )
-                        isProcessing = false
-                    }
-                }
-            } else {
-                errorMessage = context.getString(R.string.could_not_read_image)
+                viewModel.processTicket(bitmap)
             }
         }
     }
 
+    LaunchedEffect(uiState.ticketProcessed) {
+        if (uiState.ticketProcessed) {
+            onTicketProcessed()
+            viewModel.resetTicketProcessed()
+        }
+    }
+
+    HomeScreen(
+        uiState = uiState,
+        onScanClicked = {
+            val photoFile = File.createTempFile("ticket_", ".jpg", context.cacheDir)
+            val uri = FileProvider.getUriForFile(
+                context,
+                "io.devexpert.splitbill.fileprovider",
+                photoFile
+            )
+            photoUri = uri
+            cameraLauncher.launch(uri)
+        }
+    )
+}
+
+@Composable
+fun HomeScreen(
+    uiState: HomeUiState,
+    onScanClicked: () -> Unit
+) {
     Scaffold { padding ->
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -119,36 +93,22 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Contador de escaneos
                 Text(
-                    text = if (scansLeft > 0)
-                        stringResource(R.string.scans_remaining, scansLeft)
+                    text = if (uiState.scansLeft > 0)
+                        stringResource(R.string.scans_remaining, uiState.scansLeft)
                     else
                         stringResource(R.string.no_scans_remaining),
                     fontSize = 18.sp,
                     modifier = Modifier.padding(bottom = 32.dp)
                 )
-                // Botón principal
                 Button(
-                    onClick = {
-                        if (isButtonEnabled && !isProcessing) {
-                            // Crear archivo temporal para la foto
-                            val photoFile = File.createTempFile("ticket_", ".jpg", context.cacheDir)
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "io.devexpert.splitbill.fileprovider",
-                                photoFile
-                            )
-                            photoUri = uri
-                            cameraLauncher.launch(uri)
-                        }
-                    },
-                    enabled = isButtonEnabled && !isProcessing,
+                    onClick = onScanClicked,
+                    enabled = uiState.scansLeft > 0 && !uiState.isProcessing,
                     modifier = Modifier.size(width = 320.dp, height = 64.dp),
                     shape = ButtonDefaults.shape
                 ) {
                     Text(
-                        text = if (isProcessing)
+                        text = if (uiState.isProcessing)
                             stringResource(R.string.processing)
                         else
                             stringResource(R.string.scan_ticket),
@@ -156,20 +116,17 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold
                     )
                 }
-
-                // Mostrar resultado del procesamiento
                 when {
-                    isProcessing -> {
+                    uiState.isProcessing -> {
                         Text(
                             text = stringResource(R.string.photo_captured_processing),
                             fontSize = 16.sp,
                             modifier = Modifier.padding(top = 16.dp)
                         )
                     }
-
-                    errorMessage != null -> {
+                    uiState.errorMessage != null -> {
                         Text(
-                            text = errorMessage!!,
+                            text = uiState.errorMessage,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(top = 16.dp)
                         )
@@ -178,4 +135,5 @@ fun HomeScreen(
             }
         }
     }
-} 
+}
+ 

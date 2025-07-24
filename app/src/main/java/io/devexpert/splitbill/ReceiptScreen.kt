@@ -1,10 +1,7 @@
 package io.devexpert.splitbill
 
 import androidx.compose.foundation.layout.*
-import io.devexpert.splitbill.data.TicketRepository
-import io.devexpert.splitbill.data.TicketData
 import io.devexpert.splitbill.data.TicketItem
-import io.devexpert.splitbill.domain.usecases.GetTicketDataUseCase
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,20 +18,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.devexpert.splitbill.ui.viewmodel.ReceiptViewModel
+import io.devexpert.splitbill.ui.viewmodel.ReceiptUiState
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceiptScreen(
-    ticketRepository: TicketRepository,
+    viewModel: ReceiptViewModel,
     onBackPressed: () -> Unit
 ) {
-    // Caso de uso para obtener datos del repositorio
-    val getTicketDataUseCase = remember { GetTicketDataUseCase(ticketRepository) }
-    val ticketData = remember { getTicketDataUseCase() }
+    val uiState by viewModel.uiState.collectAsState()
 
-    if (ticketData == null) {
-        // Si no hay datos, mostrar error y botón para volver
+    ReceiptScreenContent(
+        uiState = uiState,
+        onBackPressed = onBackPressed,
+        onQuantityChange = viewModel::onQuantityChange,
+        onMarkAsPaid = viewModel::onMarkAsPaid
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReceiptScreenContent(
+    uiState: ReceiptUiState,
+    onBackPressed: () -> Unit,
+    onQuantityChange: (TicketItem, Int) -> Unit,
+    onMarkAsPaid: () -> Unit
+) {
+    if (uiState.ticketData == null) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,32 +65,6 @@ fun ReceiptScreen(
         }
         return
     }
-
-    // Estados para manejar las cantidades seleccionadas y items pagados
-    var selectedQuantities by remember {
-        mutableStateOf(ticketData.items.associate { item -> item to 0 })
-    }
-    var paidQuantities by remember {
-        mutableStateOf(ticketData.items.associate { item -> item to 0 })
-    }
-
-    // Calcular total seleccionado
-    val selectedTotal = selectedQuantities.entries.sumOf { (item, quantity) ->
-        item.price * quantity
-    }
-
-    // Calcular items disponibles (no pagados)
-    val availableItems = ticketData.items.map { item ->
-        val paidQty = paidQuantities[item] ?: 0
-        val availableQty = item.quantity - paidQty
-        item to availableQty
-    }.filter { it.second > 0 }
-
-    // Items pagados
-    val paidItems = ticketData.items.map { item ->
-        val paidQty = paidQuantities[item] ?: 0
-        item to paidQty
-    }.filter { it.second > 0 }
 
     Scaffold(
         topBar = {
@@ -103,95 +89,79 @@ fun ReceiptScreen(
                 .padding(16.dp)
         ) {
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Items disponibles
-            items(availableItems) { (item, availableQty) ->
-                val selectedQty = selectedQuantities[item] ?: 0
-
-                SelectableTicketItemCard(
-                    item = item,
-                    availableQuantity = availableQty,
-                    selectedQuantity = selectedQty,
-                    onQuantityChange = { newQty ->
-                        selectedQuantities = selectedQuantities.toMutableMap().apply {
-                            this[item] = newQty
-                        }
-                    }
-                )
-            }
-
-            // Items pagados (tachados)
-            items(paidItems) { (item, paidQty) ->
-                PaidTicketItemCard(
-                    item = item,
-                    paidQuantity = paidQty
-                )
-            }
-        }
-
-        // Total seleccionado y botón de pagar
-        if (selectedTotal > 0) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+                items(uiState.availableItems) { (item, availableQty) ->
+                    val selectedQty = uiState.selectedQuantities[item] ?: 0
+
+                    SelectableTicketItemCard(
+                        item = item,
+                        availableQuantity = availableQty,
+                        selectedQuantity = selectedQty,
+                        onQuantityChange = { newQty ->
+                            onQuantityChange(item, newQty)
+                        }
+                    )
+                }
+
+                items(uiState.paidItems) { (item, paidQty) ->
+                    PaidTicketItemCard(
+                        item = item,
+                        paidQuantity = paidQty
+                    )
+                }
+            }
+
+            if (uiState.selectedTotal > 0) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.selected_total),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "€${String.format(Locale.getDefault(), "%.2f", selectedTotal)}",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.selected_total),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "€${String.format(Locale.getDefault(), "%.2f", uiState.selectedTotal)}",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
-                        onClick = {
-                            // Marcar como pagado
-                            paidQuantities = paidQuantities.toMutableMap().apply {
-                                selectedQuantities.forEach { (item, selectedQty) ->
-                                    if (selectedQty > 0) {
-                                        this[item] = (this[item] ?: 0) + selectedQty
-                                    }
-                                }
-                            }
-                            // Limpiar selección
-                            selectedQuantities = selectedQuantities.mapValues { 0 }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4CAF50) // Verde
-                        )
-                    ) {
-                        Text(
-                            text = stringResource(R.string.mark_as_paid),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Button(
+                            onClick = onMarkAsPaid,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50)
+                            )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.mark_as_paid),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
-        }
         }
     }
 }
@@ -212,7 +182,6 @@ fun SelectableTicketItemCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cantidad original en círculo
             Box(
                 modifier = Modifier
                     .size(40.dp),
@@ -233,7 +202,6 @@ fun SelectableTicketItemCard(
                 }
             }
 
-            // Información del item
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -251,9 +219,7 @@ fun SelectableTicketItemCard(
                 )
             }
 
-            // Controles de selección
             if (availableQuantity == 1) {
-                // Checkbox para items de cantidad 1
                 Checkbox(
                     checked = selectedQuantity > 0,
                     onCheckedChange = { checked ->
@@ -261,7 +227,6 @@ fun SelectableTicketItemCard(
                     }
                 )
             } else {
-                // Contador con botones +/- para items con más cantidad
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -322,7 +287,6 @@ fun PaidTicketItemCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cantidad pagada en círculo
             Box(
                 modifier = Modifier
                     .size(40.dp),
@@ -345,7 +309,6 @@ fun PaidTicketItemCard(
                 }
             }
 
-            // Información del item tachada
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -366,7 +329,6 @@ fun PaidTicketItemCard(
                 )
             }
 
-            // Precio total pagado
             Text(
                 text = "€${String.format(Locale.getDefault(), "%.2f", item.price * paidQuantity)}",
                 fontSize = 16.sp,
@@ -376,4 +338,5 @@ fun PaidTicketItemCard(
             )
         }
     }
-} 
+}
+ 

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -12,7 +13,14 @@ import io.devexpert.splitbill.data.MockTicketDataSource
 import io.devexpert.splitbill.data.TicketRepository
 import io.devexpert.splitbill.data.ScanCounterRepository
 import io.devexpert.splitbill.data.DataStoreScanCounterDataSource
+import io.devexpert.splitbill.domain.usecases.DecrementScanCounterUseCase
+import io.devexpert.splitbill.domain.usecases.GetScansRemainingUseCase
+import io.devexpert.splitbill.domain.usecases.GetTicketDataUseCase
+import io.devexpert.splitbill.domain.usecases.InitializeScanCounterUseCase
+import io.devexpert.splitbill.domain.usecases.ProcessTicketUseCase
 import io.devexpert.splitbill.ui.theme.SplitBillTheme
+import io.devexpert.splitbill.ui.viewmodel.HomeViewModel
+import io.devexpert.splitbill.ui.viewmodel.ReceiptViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,9 +45,16 @@ class MainActivity : ComponentActivity() {
                     startDestination = "home"
                 ) {
                     composable("home") {
+                        val homeViewModel: HomeViewModel = viewModel {
+                            HomeViewModel(
+                                processTicketUseCase = ProcessTicketUseCase(ticketRepository),
+                                initializeScanCounterUseCase = InitializeScanCounterUseCase(scanCounterRepository),
+                                getScansRemainingUseCase = GetScansRemainingUseCase(scanCounterRepository),
+                                decrementScanCounterUseCase = DecrementScanCounterUseCase(scanCounterRepository)
+                            )
+                        }
                         HomeScreen(
-                            ticketRepository = ticketRepository,
-                            scanCounterRepository = scanCounterRepository,
+                            viewModel = homeViewModel,
                             onTicketProcessed = {
                                 navController.navigate("receipt")
                             }
@@ -47,8 +62,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("receipt") {
+                        val receiptViewModel: ReceiptViewModel = viewModel {
+                            ReceiptViewModel(GetTicketDataUseCase(ticketRepository))
+                        }
                         ReceiptScreen(
-                            ticketRepository = ticketRepository,
+                            viewModel = receiptViewModel,
                             onBackPressed = {
                                 navController.popBackStack()
                             }
