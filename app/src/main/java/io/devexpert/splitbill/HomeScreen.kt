@@ -1,9 +1,5 @@
 package io.devexpert.splitbill
 
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,42 +14,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
+import io.devexpert.splitbill.ui.state.rememberCameraState
 import io.devexpert.splitbill.ui.viewmodel.HomeViewModel
 import io.devexpert.splitbill.ui.viewmodel.HomeUiState
-import java.io.File
 
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     viewModel: HomeViewModel,
     onTicketProcessed: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
-
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success: Boolean ->
-        if (success && photoUri != null) {
-            val inputStream = context.contentResolver.openInputStream(photoUri!!)
-            val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
-            if (bitmap != null) {
-                viewModel.processTicket(bitmap)
-            }
-        }
-    }
+    val cameraState = rememberCameraState(onImageCaptured = viewModel::processTicket)
 
     LaunchedEffect(uiState.ticketProcessed) {
         if (uiState.ticketProcessed) {
@@ -62,29 +40,22 @@ fun HomeScreen(
         }
     }
 
-    HomeScreen(
+    HomeScreenContent(
+        modifier = modifier,
         uiState = uiState,
-        onScanClicked = {
-            val photoFile = File.createTempFile("ticket_", ".jpg", context.cacheDir)
-            val uri = FileProvider.getUriForFile(
-                context,
-                "io.devexpert.splitbill.fileprovider",
-                photoFile
-            )
-            photoUri = uri
-            cameraLauncher.launch(uri)
-        }
+        onScanClicked = cameraState::launchCamera
     )
 }
 
 @Composable
-fun HomeScreen(
+fun HomeScreenContent(
+    modifier: Modifier = Modifier,
     uiState: HomeUiState,
     onScanClicked: () -> Unit
 ) {
     Scaffold { padding ->
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .padding(padding)
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
